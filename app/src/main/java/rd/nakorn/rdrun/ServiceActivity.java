@@ -21,6 +21,8 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
     private ImageView imageView;
     private TextView nameTextView, surnameTextView;
     private int[] avataInts;
+    private double userLatADouble = 13.8067437, userLngADouble = 100.5747341;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,17 +40,19 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
         nameTextView.setText(nameString);
         surnameTextView.setText(surnameString);
 
+        //get value from Intent
+        idString = getIntent().getStringExtra("id");
+        avataString = getIntent().getStringExtra("Avata");
+        nameString = getIntent().getStringExtra("Name");
+        surnameString = getIntent().getStringExtra("Surname");
+
         //show avata
         MyConstant myConstant = new MyConstant();
         avataInts = myConstant.getAvataInts();
         imageView.setImageResource(avataInts[Integer.parseInt(avataString)]);
 
 
-        //get value from Intent
-        idString = getIntent().getStringExtra("id");
-        avataString = getIntent().getStringExtra("Avata");
-        nameString = getIntent().getStringExtra("Name");
-        surnameString = getIntent().getStringExtra("Surname");
+
 
         //show text
 
@@ -68,9 +72,16 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        //setup center of map
+        LatLng latLng = new LatLng(userLatADouble,userLngADouble);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
+
+
+        /*
         // Add a marker in Sydney and move the camera
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        */
     }//onMap
 }//main class

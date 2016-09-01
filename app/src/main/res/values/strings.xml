@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">RD run</string>
+
+    <string name="signup">สมัครสมาชิก</string>
+    <string name="signin">ลงซื่อใช้งาน</string>
+    <string name="title_activity_service">Map</string>
+
+
+</resources>

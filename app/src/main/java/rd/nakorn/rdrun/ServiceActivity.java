@@ -139,6 +139,7 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
 
 
 
+
     public LocationListener locationListener = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {

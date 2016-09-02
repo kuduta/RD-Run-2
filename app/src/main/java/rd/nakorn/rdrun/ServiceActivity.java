@@ -5,9 +5,9 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,9 +17,15 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.StreetViewPanoramaCamera;
+import com.squareup.okhttp.Call;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.FormEncodingBuilder;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 
+import java.io.IOException;
 
 public class ServiceActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -29,9 +35,10 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
     private ImageView imageView;
     private TextView nameTextView, surnameTextView;
     private int[] avataInts;
-    private double userLatADouble = 13.8067437, userLngADouble = 100.5747341;
-    private LocationManager locationManager;  //service find location
-    private Criteria criteria; // 3D location
+    private double userLatADouble = 13.806814, userLngADouble = 100.574725; // Connection
+    private LocationManager locationManager;
+    private Criteria criteria;
+    private static final String urlPHP = "http://swiftcodingthai.com/rd/edit_location_master.php";
 
 
     @Override
@@ -39,82 +46,67 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
         super.onCreate(savedInstanceState);
         setContentView(R.layout.my_service);
 
-        //bind widget
-
+        //Bind Widget
         imageView = (ImageView) findViewById(R.id.imageView7);
         nameTextView = (TextView) findViewById(R.id.textView8);
         surnameTextView = (TextView) findViewById(R.id.textView9);
 
-        //show text
-
-        nameTextView.setText(nameString);
-        surnameTextView.setText(surnameString);
-
-        //get value from Intent
+        //Get Value From Intent
         idString = getIntent().getStringExtra("id");
         avataString = getIntent().getStringExtra("Avata");
         nameString = getIntent().getStringExtra("Name");
         surnameString = getIntent().getStringExtra("Surname");
 
-        //Setup location XXXXX Context pipe
+        //Setup Location
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         criteria = new Criteria();
         criteria.setAccuracy(Criteria.ACCURACY_FINE);
         criteria.setAltitudeRequired(false);
         criteria.setBearingRequired(false);
 
+        //Show Text
+        nameTextView.setText(nameString);
+        surnameTextView.setText(surnameString);
 
-        //show avata
+        //Show Avata
         MyConstant myConstant = new MyConstant();
         avataInts = myConstant.getAvataInts();
         imageView.setImageResource(avataInts[Integer.parseInt(avataString)]);
-
-
-
-
-        //show text
-
-
 
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-    } // main Method
+
+    }   // Main Method
 
     @Override
     protected void onResume() {
         super.onResume();
 
         locationManager.removeUpdates(locationListener);
-        Location networkLocation = myFindLocation(LocationManager.NETWORK_PROVIDER); //find location by ISP
 
+        Location networkLocation = myFindLocation(LocationManager.NETWORK_PROVIDER);
         if (networkLocation != null) {
-
-            userLngADouble = networkLocation.getLongitude();
             userLatADouble = networkLocation.getLatitude();
-
+            userLngADouble = networkLocation.getLongitude();
         }
 
-        Location gpsLocation = myFindLocation(LocationManager.GPS_PROVIDER);  //find location by GPS
+        Location gpsLocation = myFindLocation(LocationManager.GPS_PROVIDER);
         if (gpsLocation != null) {
-
-            userLngADouble = networkLocation.getLongitude();
-            userLatADouble = networkLocation.getLatitude();
+            userLatADouble = gpsLocation.getLatitude();
+            userLngADouble = gpsLocation.getLongitude();
         }
 
 
-
-
-    } // onResume
+    }   // onResume
 
     @Override
     protected void onStop() {
         super.onStop();
 
         locationManager.removeUpdates(locationListener);
-
 
     }
 
@@ -124,20 +116,15 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
 
         if (locationManager.isProviderEnabled(strProvider)) {
 
-            // Setting LocationManager 1000 is time , 10 is distance
-            locationManager.requestLocationUpdates(strProvider,1000, 10,locationListener);
+            locationManager.requestLocationUpdates(strProvider, 1000, 10, locationListener);
             location = locationManager.getLastKnownLocation(strProvider);
 
         } else {
-
-            Log.d("1SepV1", "Cannot find location");
-
+            Log.d("1SepV1", "Cannot find Location");
         }
 
         return location;
     }
-
-
 
 
     public LocationListener locationListener = new LocationListener() {
@@ -147,8 +134,7 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
             userLatADouble = location.getLatitude();
             userLngADouble = location.getLongitude();
 
-
-        }// onLocationChanged
+        }   // onLocationChange
 
         @Override
         public void onStatusChanged(String s, int i, Bundle bundle) {
@@ -166,38 +152,65 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
         }
     };
 
-
-
-
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        //setup center of map
-        LatLng latLng = new LatLng(userLatADouble,userLngADouble);
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng,16));
-
+        //Setup Center of Map
+        LatLng latLng = new LatLng(userLatADouble, userLngADouble);
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
 
         //Loop
         myLoop();
 
-    }//onMap
+
+    }   // onMap
 
     private void myLoop() {
 
-        Log.d("1SepV2", "Lat ==>  " + userLatADouble);
-        Log.d("1SepV2", "Lng ==>  " + userLngADouble);
+        //To Do
+        Log.d("1SepV2", "Lat ==> " + userLatADouble);
+        Log.d("1SepV2", "Lng ==> " + userLngADouble);
 
-        // Post Delay
+        editLatLngOnServer();
+
+
+        //Post Delay
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-
                 myLoop();
-
             }
-        },1000);
+        }, 1000);
 
-    }//myloop
-}//main class
+
+    }   // myLoop
+
+    private void editLatLngOnServer() {
+
+        OkHttpClient okHttpClient = new OkHttpClient();
+        RequestBody requestBody = new FormEncodingBuilder()
+                .add("isAdd", "true")
+                .add("id", idString)
+                .add("Lat", Double.toString(userLatADouble))
+                .add("Lng", Double.toString(userLngADouble))
+                .build();
+        Request.Builder builder = new Request.Builder();
+        Request request = builder.url(urlPHP).post(requestBody).build();
+        Call call = okHttpClient.newCall(request);
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
+                Log.d("2SepV1", "e ==> " + e.toString());
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                Log.d("2SepV1", "Result ==> " + response.body().string());
+            }
+        });
+
+    }   // editLatLng
+
+}   // Main Class

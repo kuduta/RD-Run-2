@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -17,7 +18,10 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.FormEncodingBuilder;
@@ -25,6 +29,9 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.IOException;
 
@@ -40,7 +47,7 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
     private LocationManager locationManager;
     private Criteria criteria;
     private static final String urlPHP = "http://swiftcodingthai.com/rd/edit_location_master.php";
-
+    private boolean statusABoolean = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,13 +89,39 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
 
     }   // Main Method
 
+
+    public void clickNormal(View view) {
+
+        mMap.setMapType(GoogleMap.MAP_TYPE_NONE);
+
+    }
+
+    public void clickSatellite(View view) {
+
+        mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+    }
+
+    public void clickTerrain(View view) {
+
+        mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+        //mMap.setTrafficEnabled(true);
+
+    }
+
+    public void clickHybrid(View view) {
+
+        mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+    }
+
     private class SynAllUser extends AsyncTask<Void, Void, String> {
 
         //Explicit
         private  Context context;
         private GoogleMap googleMap;
         private final String urlJSON = "http://swiftcodingthai.com/rd/get_user_master.php";
-
+        private String[] nameStrings, surnameStrings;
+        private int[] avataInts;
+        private double[] latDoubles, lngDoubles;
 
         public SynAllUser(Context context, GoogleMap googleMap) {
             this.context = context;
@@ -122,6 +155,63 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
             super.onPostExecute(s);
 
             Log.d("2SepV2", "JSON ==> " + s);
+
+
+            try {
+                //memory allocated Array
+                JSONArray jsonArray = new JSONArray(s);
+                nameStrings = new String[jsonArray.length()];
+                surnameStrings = new String[jsonArray.length()];
+                avataInts = new int[jsonArray.length()];
+                latDoubles = new double[jsonArray.length()];
+                lngDoubles = new double[jsonArray.length()];
+
+                for (int i = 0 ; i<jsonArray.length();i++) {
+
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    nameStrings[i] = jsonObject.getString("Name");
+                    surnameStrings[i] = jsonObject.getString("Surname");
+                    avataInts[i] = Integer.parseInt(jsonObject.getString("Avata"));
+                    latDoubles[i] = Double.parseDouble(jsonObject.getString("Lat"));
+                    lngDoubles[i] = Double.parseDouble(jsonObject.getString("Lng"));
+
+
+
+
+                    //Create Marker
+
+
+                    MyConstant myConstant = new MyConstant();
+                    int[] iconInts = myConstant.getAvataInts();
+
+
+                    googleMap.addMarker(new MarkerOptions()
+                            .position(new LatLng(latDoubles[i], lngDoubles[i]))
+                            .icon(BitmapDescriptorFactory.fromResource(iconInts[avataInts[i]]))
+                            .title(nameStrings[i] + " " + surnameStrings[i]));
+
+                    Log.d("2SepV3", "Name ( " + i + ")= " + nameStrings[i]);
+                    Log.d("2SepV3", "Lat ( " + i + ")= " + latDoubles[i]);
+                    Log.d("2SepV3", "Lng ( " + i + ")= " + lngDoubles[i]);
+                    Log.d("2SepV3", "========================================");
+
+                }
+                googleMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+                    @Override
+                    public void onMapLongClick(LatLng latLng) {
+                        statusABoolean = !statusABoolean;
+                        Log.d("2SepV4", "status ==> " + statusABoolean);
+                    }
+                });
+
+
+
+            } catch (Exception e) {
+
+                Log.d("2SepV3", "e doIn ==> " + e.toString());
+            }
+
+
 
         }
 
@@ -225,7 +315,10 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
 
         editLatLngOnServer();
 
-        createMarker();
+        if (statusABoolean) {
+            createMarker();
+        }
+
 
         //Post Delay
         Handler handler = new Handler();
@@ -241,10 +334,16 @@ public class ServiceActivity extends FragmentActivity implements OnMapReadyCallb
 
     private void createMarker() {
 
+        //Clear Marker
+
+        mMap.clear();
+
         SynAllUser synAllUser = new SynAllUser(this,mMap);
         synAllUser.execute();
 
     }//createMarker
+
+
 
     private void editLatLngOnServer() {
 
